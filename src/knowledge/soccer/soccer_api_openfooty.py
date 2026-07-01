@@ -1,0 +1,9 @@
+﻿import requests
+
+def get_openfooty_stats(player_id, team_id):
+    url = f"https://api.openfooty.com/player/{player_id}"
+    r = requests.get(url).json()
+    return {
+        "event_rate": r.get("goals_per_game", 0.3)
+    }
+

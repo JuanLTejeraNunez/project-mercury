@@ -1,0 +1,149 @@
+﻿from typing import Dict, List
+
+from src.providers.polymarket_client import PolymarketClient
+from src.agents.strategy_engine import MercuryStrategyEngine
+from src.agents.bankroll_engine import MercuryBankrollEngine
+from src.agents.learning_engine import MercuryLearningEngine
+
+
+class MercuryAnalysisAgent:
+    """
+    Agente cuantitativo real:
+    - Lee mercados reales de Polymarket
+    - Asigna bankroll real
+    - Evalua resultados reales
+    - Aprende del desempeno real
+    - Permite reinversion configurable
+    """
+
+    def __init__(self, initial_bankroll: float = 100.0, reinvest_rate: float = 0.40):
+        """
+        initial_bankroll: cantidad inicial (variable)
+        reinvest_rate: porcentaje del exito que se reinvierte (0.40 = 40%)
+        """
+        self.bankroll = initial_bankroll
+        self.reinvest_rate = reinvest_rate
+
+        self.data = PolymarketClient()
+        self.strategy = MercuryStrategyEngine()
+        self.bankroll_engine = MercuryBankrollEngine()
+        self.learning_engine = MercuryLearningEngine()
+
+    # ---------------------------------------------------------
+    # 1. Leer mercados reales
+    # ---------------------------------------------------------
+    def get_active_markets(self) -> List[Dict]:
+        markets = self.data.get_markets()
+        active = [m for m in markets if m.get("active") and not m.get("closed")]
+        return active
+
+    # ---------------------------------------------------------
+    # 2. Preparar mercados con probabilidad real
+    # ---------------------------------------------------------
+    def prepare_markets(self, markets: List[Dict]) -> List[Dict]:
+        prepared = []
+        for m in markets:
+            yes_price = None
+
+            # tokens = lista de outcomes reales
+            tokens = m.get("tokens", [])
+            for t in tokens:
+                if t.get("outcome") and t.get("price") is not None:
+                    # Polymarket: probabilidad implÃ­cita = precio del token ganador potencial
+                    yes_price = float(t["price"])
+                    break
+
+            if yes_price is None:
+                continue
+
+            prepared.append({
+                "id": m.get("condition_id"),
+                "question": m.get("question"),
+                "prob": yes_price
+            })
+
+        return prepared
+
+    # ---------------------------------------------------------
+    # 3. Asignar bankroll real
+    # ---------------------------------------------------------
+    def allocate(self, prepared_markets: List[Dict]):
+        return self.strategy.allocate_bankroll(prepared_markets, bankroll=self.bankroll)
+
+    # ---------------------------------------------------------
+    # 4. Evaluar resultados reales
+    # ---------------------------------------------------------
+    def evaluate(self, allocations: List[Dict]) -> Dict:
+        """
+        Usa mercados resueltos reales para evaluar la estrategia.
+        """
+        markets = self.data.get_markets()
+        outcomes = {}
+
+        for m in markets:
+            if m.get("closed") and m.get("tokens"):
+                winner_token = None
+                for t in m["tokens"]:
+                    if t.get("winner"):
+                        winner_token = t
+                        break
+
+                if winner_token:
+                    outcomes[m.get("condition_id")] = True
+                else:
+                    outcomes[m.get("condition_id")] = False
+
+        return self.bankroll_engine.evaluate_results(allocations, outcomes)
+
+    # ---------------------------------------------------------
+    # 5. Aprender del desempeÃ±o real
+    # ---------------------------------------------------------
+    def learn(self, prepared_markets: List[Dict], outcomes: Dict[str, bool]):
+        return self.learning_engine.evaluate_predictions(prepared_markets, outcomes)
+
+    # ---------------------------------------------------------
+    # 6. ReinversiÃ³n real
+    # ---------------------------------------------------------
+    def reinvest(self, pnl_result: Dict):
+        """
+        Reinversion basada en el oxito real.
+        reinvest_rate = porcentaje del oxito que se reinvierte.
+        """
+        final_bankroll = pnl_result["final_bankroll"]
+        gain = final_bankroll - self.bankroll
+
+        if gain > 0:
+            reinvest_amount = gain * self.reinvest_rate
+            self.bankroll += reinvest_amount
+
+        return self.bankroll
+
+    # ---------------------------------------------------------
+    # 7. Pipeline completo
+    # ---------------------------------------------------------
+    def run_cycle(self):
+        """
+        Ejecuta un ciclo completo del agente:
+        - lee mercados reales
+        - asigna bankroll real
+        - evalua resultados reales
+        - aprende del desempeno real
+        - reinvierte parte del exito
+        """
+        active_markets = self.get_active_markets()
+        prepared = self.prepare_markets(active_markets)
+        allocations = self.allocate(prepared)
+        pnl_result = self.evaluate(allocations)
+
+        outcomes = {alloc["id"]: pnl_result["details"][i]["won"] for i, alloc in enumerate(allocations)}
+        learning = self.learn(prepared, outcomes)
+
+        new_bankroll = self.reinvest(pnl_result)
+
+        return {
+            "allocations": allocations,
+            "pnl_result": pnl_result,
+            "learning": learning,
+            "new_bankroll": new_bankroll
+        }
+

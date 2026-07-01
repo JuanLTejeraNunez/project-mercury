@@ -1,0 +1,9 @@
+﻿import requests
+
+def get_boxing_stats(fighter_id):
+    url = f"https://api.boxing.com/fighter/{fighter_id}"
+    r = requests.get(url).json()
+    return {
+        "event_rate": r.get("ko_rate", 0.5)
+    }
+

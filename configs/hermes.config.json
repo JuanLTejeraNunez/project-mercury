@@ -1,0 +1,17 @@
+{
+    "agent_name": "Hermes",
+    "version": "0.1.0",
+    "memory": {
+        "enabled": true,
+        "provider": "sqlite",
+        "path": "data/memory.sqlite"
+    },
+    "logging": {
+        "level": "INFO",
+        "file": "logs/hermes.log"
+    },
+    "agents": {
+        "core": ["CoordinatorAgent"],
+        "specialized": ["MemoryAgent", "TaskAgent", "AnalysisAgent"]
+    }
+}

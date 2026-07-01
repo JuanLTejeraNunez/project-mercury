@@ -1,0 +1,102 @@
+﻿from typing import List, Dict
+
+class MercurySimulationEngine:
+    """
+    Motor de cÃ¡lculo basado en datos reales.
+    No simula nada: solo calcula mÃ©tricas reales.
+    """
+
+    def calculate_pnl(self, allocations: List[Dict], outcomes: Dict[str, bool]):
+        """
+        Calcula PnL real basado en resultados reales.
+        """
+
+        pnl = 0.0
+        wins = 0
+
+        for alloc in allocations:
+            mid = alloc["id"]
+            stake = alloc["stake"]
+            won = outcomes.get(mid, False)
+
+            if won:
+                pnl += stake  # retorno simple
+                wins += 1
+            else:
+                pnl -= stake
+
+        win_rate = wins / len(allocations) if allocations else 0.0
+
+        return {
+            "pnl": pnl,
+            "win_rate": win_rate
+        }
+
+
+    def simulate_binary_events(self, probs, trials: int = 1, rng_seed: int | None = None):
+        """
+        Simula eventos binarios independientes para cada probabilidad en `probs`.
+        - probs: iterable de probabilidades en [0,1] o [0,100]
+        - trials: número de repeticiones por probabilidad
+        - rng_seed: semilla opcional para reproducibilidad
+        Devuelve: lista de listas; cada elemento corresponde a una probabilidad y contiene `trials` valores 0/1.
+        """
+        try:
+            from random import Random
+        except Exception:
+            import random as _random
+            Random = _random.Random
+
+        rng = Random(rng_seed) if rng_seed is not None else Random()
+        results = []
+        for p in probs:
+            if p is None:
+                p = 0.0
+            if p > 1 and p <= 100:
+                p = p / 100.0
+            p = max(0.0, min(1.0, float(p)))
+            row = [1 if rng.random() < p else 0 for _ in range(int(trials))]
+            results.append(row)
+        return results
+
+
+    def simulate_pnl(self, probs, stake: float = 1.0, rng_seed: int | None = None):
+        """
+        Simula o calcula PnL por cada probabilidad en `probs`.
+        - Si existe calculate_pnl(prob, stake, outcome) se usará para calcular PnL por resultado simulado.
+        - Si no existe, devuelve el PnL esperado simple: stake * (2*prob - 1).
+        - Devuelve: lista de floats (uno por cada prob).
+        - rng_seed: semilla opcional para reproducibilidad.
+        """
+        has_calc = hasattr(self, "calculate_pnl") and callable(getattr(self, "calculate_pnl"))
+        try:
+            from random import Random
+        except Exception:
+            import random as _random
+            Random = _random.Random
+        rng = Random(rng_seed) if rng_seed is not None else Random()
+
+        pnls = []
+        for p in probs:
+            if p is None:
+                p = 0.0
+            if p > 1 and p <= 100:
+                p = p / 100.0
+            p = max(0.0, min(1.0, float(p)))
+
+            if has_calc:
+                outcome = 1 if rng.random() < p else 0
+                try:
+                    pnl = self.calculate_pnl(p, stake, outcome)
+                except TypeError:
+                    try:
+                        pnl = self.calculate_pnl(p, stake)
+                    except Exception:
+                        pnl = stake * (2 * p - 1)
+                except Exception:
+                    pnl = stake * (2 * p - 1)
+            else:
+                pnl = stake * (2 * p - 1)
+
+            pnls.append(float(pnl))
+        return pnls

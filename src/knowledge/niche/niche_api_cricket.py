@@ -1,0 +1,9 @@
+﻿import requests
+
+def get_cricket_stats(player_id, team_id):
+    url = f"https://api.cricket.com/player/{player_id}"
+    r = requests.get(url).json()
+    return {
+        "event_rate": r.get("runs_per_game", 20.0)
+    }
+

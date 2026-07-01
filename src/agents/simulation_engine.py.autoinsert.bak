@@ -1,0 +1,34 @@
+﻿from typing import List, Dict
+
+class MercurySimulationEngine:
+    """
+    Motor de cÃ¡lculo basado en datos reales.
+    No simula nada: solo calcula mÃ©tricas reales.
+    """
+
+    def calculate_pnl(self, allocations: List[Dict], outcomes: Dict[str, bool]):
+        """
+        Calcula PnL real basado en resultados reales.
+        """
+
+        pnl = 0.0
+        wins = 0
+
+        for alloc in allocations:
+            mid = alloc["id"]
+            stake = alloc["stake"]
+            won = outcomes.get(mid, False)
+
+            if won:
+                pnl += stake  # retorno simple
+                wins += 1
+            else:
+                pnl -= stake
+
+        win_rate = wins / len(allocations) if allocations else 0.0
+
+        return {
+            "pnl": pnl,
+            "win_rate": win_rate
+        }
+

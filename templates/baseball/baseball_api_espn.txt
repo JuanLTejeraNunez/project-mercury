@@ -1,0 +1,8 @@
+import requests
+
+def get_espn_stats(player_id, team_id):
+    url = f"https://site.api.espn.com/apis/v2/sports/baseball/mlb/athletes/{player_id}"
+    r = requests.get(url).json()
+    return {
+        "event_rate": r.get("statistics", [{}])[0].get("avg", 0.1)
+    }
