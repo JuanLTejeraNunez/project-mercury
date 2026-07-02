@@ -1,179 +1,202 @@
-from typing import Dict, List
+﻿import logging
+from dataclasses import dataclass, asdict
+from typing import List, Dict, Any, Optional
 
-from src.providers.polymarket_client import PolymarketClient
-from src.agents.strategy_engine import MercuryStrategyEngine
-from src.agents.bankroll_engine import MercuryBankrollEngine
-from src.agents.learning_engine import MercuryLearningEngine
+from src.router.sports_market_router import SportsMarketRouter
 
-
-class MercuryAnalysisAgent:
-    """
-    Agente cuantitativo real:
-    - Lee mercados reales de Polymarket
-    - Asigna bankroll real
-    - Evalua resultados reales
-    - Aprende del desempeno real
-    - Permite reinversion configurable
-    """
-
-    def __init__(self, initial_bankroll: float = 100.0, reinvest_rate: float = 0.40):
-        """
-        initial_bankroll: cantidad inicial (variable)
-        reinvest_rate: porcentaje del exito que se reinvierte (0.40 = 40%)
-        """
-        self.bankroll = initial_bankroll
-        self.reinvest_rate = reinvest_rate
-
-        self.data = PolymarketClient()
-        self.strategy = MercuryStrategyEngine()
-        self.bankroll_engine = MercuryBankrollEngine()
-        self.learning_engine = MercuryLearningEngine()
-
-    # ---------------------------------------------------------
-    # 1. Leer mercados reales
-    # ---------------------------------------------------------
-    def get_active_markets(self) -> List[Dict]:
-        markets = self.data.get_markets()
-        active = [m for m in markets if m.get("active") and not m.get("closed")]
-        return active
-
-    # ---------------------------------------------------------
-    # 2. Preparar mercados con probabilidad real
-    # ---------------------------------------------------------
-    def prepare_markets(self, markets: List[Dict]) -> List[Dict]:
-        prepared = []
-        for m in markets:
-            yes_price = None
-
-            # tokens = lista de outcomes reales
-            tokens = m.get("tokens", [])
-            for t in tokens:
-                if t.get("outcome") and t.get("price") is not None:
-                    # Polymarket: probabilidad implícita = precio del token ganador potencial
-                    yes_price = float(t["price"])
-                    break
-
-            if yes_price is None:
-                continue
-
-            prepared.append({
-                "id": m.get("condition_id"),
-                "question": m.get("question"),
-                "prob": yes_price
-            })
-
-        return prepared
-
-    # ---------------------------------------------------------
-    # 3. Asignar bankroll real
-    # ---------------------------------------------------------
-    def allocate(self, prepared_markets: List[Dict]):
-        return self.strategy.allocate_bankroll(prepared_markets, bankroll=self.bankroll)
-
-    # ---------------------------------------------------------
-    # 4. Evaluar resultados reales
-    # ---------------------------------------------------------
-    def evaluate(self, allocations: List[Dict]) -> Dict:
-        """
-        Usa mercados resueltos reales para evaluar la estrategia.
-        """
-        markets = self.data.get_markets()
-        outcomes = {}
-
-        for m in markets:
-            if m.get("closed") and m.get("tokens"):
-                winner_token = None
-                for t in m["tokens"]:
-                    if t.get("winner"):
-                        winner_token = t
-                        break
-
-                if winner_token:
-                    outcomes[m.get("condition_id")] = True
-                else:
-                    outcomes[m.get("condition_id")] = False
-
-        return self.bankroll_engine.evaluate_results(allocations, outcomes)
-
-    # ---------------------------------------------------------
-    # 5. Aprender del desempeño real
-    # ---------------------------------------------------------
-    def learn(self, prepared_markets: List[Dict], outcomes: Dict[str, bool]):
-        return self.learning_engine.evaluate_predictions(prepared_markets, outcomes)
-
-    # ---------------------------------------------------------
-    # 6. Reinversión real
-    # ---------------------------------------------------------
-    def reinvest(self, pnl_result: Dict):
-        """
-        Reinversion basada en el oxito real.
-        reinvest_rate = porcentaje del oxito que se reinvierte.
-        """
-        final_bankroll = pnl_result["final_bankroll"]
-        gain = final_bankroll - self.bankroll
-
-        if gain > 0:
-            reinvest_amount = gain * self.reinvest_rate
-            self.bankroll += reinvest_amount
-
-        return self.bankroll
-
-    # ---------------------------------------------------------
-    # 7. Pipeline completo
-    # ---------------------------------------------------------
-    def run_cycle(self):
-        """
-        Ejecuta un ciclo completo del agente:
-        - lee mercados reales
-        - asigna bankroll real
-        - evalua resultados reales
-        - aprende del desempeno real
-        - reinvierte parte del exito
-        """
-        active_markets = self.get_active_markets()
-        prepared = self.prepare_markets(active_markets)
-        allocations = self.allocate(prepared)
-        pnl_result = self.evaluate(allocations)
-
-        outcomes = {alloc["id"]: pnl_result["details"][i]["won"] for i, alloc in enumerate(allocations)}
-        learning = self.learn(prepared, outcomes)
-
-        new_bankroll = self.reinvest(pnl_result)
-
-        return {
-            "allocations": allocations,
-            "pnl_result": pnl_result,
-            "learning": learning,
-            "new_bankroll": new_bankroll
-        }
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
+@dataclass
+class BetOpportunity:
+    source: str
+    market_id: str
+    title: str
+    recommended_side: str
+    implied_prob: float
+    model_prob: float
+    edge: float
+    max_stake: float
 
 
+def _safe_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except Exception:
+        return default
 
 
-    def bayes_update(self, prior: float, likelihood: float, evidence: float) -> float:
-        """
-        Actualiza una probabilidad previa usando la regla de Bayes:
-        posterior = (likelihood * prior) / evidence
-        Asume evidence > 0 y valores en [0,1].
-        """
-        if evidence <= 0:
-            raise ValueError("evidence must be > 0")
-        posterior = (likelihood * prior) / evidence
-        return max(0.0, min(1.0, posterior))
+def _implied_prob_from_price(price_dollars: float) -> float:
+    if price_dollars <= 0:
+        return 0.0
+    if price_dollars >= 1:
+        return 1.0
+    return price_dollars
 
 
-    def implied_probability_from_price(self, price: float) -> float:
-        """
-        Convierte un precio de mercado (0..1 o 0..100) a probabilidad impl�cita en 0..1.
-        Normaliza si el precio est� en 0..100.
-        """
-        if price < 0:
-            raise ValueError("price must be non-negative")
-        if price > 1:
-            if price <= 100:
-                price = price / 100.0
-            else:
-                price = 1.0
-        return max(0.0, min(1.0, price))
+def _model_probability_stub(market: Dict[str, Any]) -> float:
+    liquidity = _safe_float(market.get("liquidity_dollars", 0.0))
+    volume = _safe_float(market.get("volume_fp", market.get("volume_24h_fp", 0.0)))
+
+    base = 0.5
+    base += min(liquidity / 1000.0, 0.1)
+    base += min(volume / 1000.0, 0.1)
+
+    if base < 0.05:
+        base = 0.05
+    if base > 0.95:
+        base = 0.95
+    return base
+
+
+def _build_kalshi_opportunities(markets, bankroll, min_edge, sport_filter=None):
+    opportunities = []
+
+    for m in markets:
+        title = m.get("title", "")
+        ticker = m.get("ticker", "")
+        status = m.get("status", "")
+
+        if status != "active":
+            continue
+
+        if sport_filter and sport_filter.lower() not in title.lower():
+            continue
+
+        yes_price = _safe_float(m.get("yes_ask_dollars", 0.0))
+        no_price = _safe_float(m.get("no_ask_dollars", 0.0))
+
+        implied_yes = _implied_prob_from_price(yes_price)
+        implied_no = _implied_prob_from_price(no_price)
+
+        model_prob = _model_probability_stub(m)
+
+        edge_yes = model_prob - implied_yes
+        edge_no = (1.0 - model_prob) - implied_no
+
+        if edge_yes >= min_edge and edge_yes >= edge_no:
+            recommended_side = "yes"
+            edge = edge_yes
+            implied = implied_yes
+        elif edge_no >= min_edge:
+            recommended_side = "no"
+            edge = edge_no
+            implied = implied_no
+        else:
+            continue
+
+        max_stake = bankroll * min(edge * 2.0, 0.1)
+
+        opportunities.append(
+            BetOpportunity(
+                source="kalshi",
+                market_id=ticker,
+                title=title,
+                recommended_side=recommended_side,
+                implied_prob=implied,
+                model_prob=model_prob,
+                edge=edge,
+                max_stake=max_stake,
+            )
+        )
+
+    return opportunities
+
+
+def _build_polymarket_opportunities(markets, bankroll, min_edge, sport_filter=None):
+    opportunities = []
+
+    for m in markets:
+        title = m.get("question", "")
+        question_id = m.get("question_id", "")
+        status = m.get("status", "open")
+
+        if status != "open":
+            continue
+
+        if sport_filter and sport_filter.lower() not in title.lower():
+            continue
+
+        yes_price = _safe_float(m.get("yes_price", 0.0))
+        implied_yes = _implied_prob_from_price(yes_price)
+        model_prob = _model_probability_stub(m)
+
+        edge_yes = model_prob - implied_yes
+
+        if edge_yes < min_edge:
+            continue
+
+        max_stake = bankroll * min(edge_yes * 2.0, 0.1)
+
+        opportunities.append(
+            BetOpportunity(
+                source="polymarket",
+                market_id=question_id,
+                title=title,
+                recommended_side="yes",
+                implied_prob=implied_yes,
+                model_prob=model_prob,
+                edge=edge_yes,
+                max_stake=max_stake,
+            )
+        )
+
+    return opportunities
+
+
+def find_sports_opportunities(sport, bankroll, min_edge=0.02):
+    router = SportsMarketRouter()
+    all_markets = router.get_all_markets()
+
+    kalshi_markets = all_markets.get("kalshi", []) or []
+    poly_markets = all_markets.get("polymarket", []) or []
+
+    kalshi_ops = _build_kalshi_opportunities(kalshi_markets, bankroll, min_edge, sport)
+    poly_ops = _build_polymarket_opportunities(poly_markets, bankroll, min_edge, sport)
+
+    opportunities = kalshi_ops + poly_ops
+    opportunities.sort(key=lambda o: o.edge, reverse=True)
+
+    return opportunities
+
+
+def evaluate_and_place_bet(sport, event, entity_id, team_id, market_id, bankroll, min_edge=0.02):
+    logger.info(
+        "Evaluating opportunities: sport=%s event=%s entity_id=%s team_id=%s bankroll=%.2f",
+        sport, event, entity_id, team_id, bankroll
+    )
+
+    opportunities = find_sports_opportunities(sport, bankroll, min_edge)
+
+    if market_id:
+        opportunities = [o for o in opportunities if o.market_id == market_id]
+
+    result = {
+        "sport": sport,
+        "event": event,
+        "entity_id": entity_id,
+        "team_id": team_id,
+        "bankroll": bankroll,
+        "min_edge": min_edge,
+        "opportunities": [asdict(o) for o in opportunities],
+        "note": "Este agente identifica oportunidades cuantitativas, no ejecuta apuestas reales."
+    }
+
+    logger.info("Found %d opportunities", len(opportunities))
+    return result
+
+
+if __name__ == "__main__":
+    demo = evaluate_and_place_bet(
+        sport="soccer",
+        event="demo",
+        entity_id="demo_entity",
+        team_id="demo_team",
+        market_id=None,
+        bankroll=1000.0,
+        min_edge=0.02,
+    )
+    print(demo)
