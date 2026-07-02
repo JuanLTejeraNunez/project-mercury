@@ -1,70 +1,55 @@
-﻿import requests
-from .base_client import BaseDataClient
+import logging
+import requests
+import json
+from pathlib import Path
 
-class PolymarketClient(BaseDataClient):
-    """
-    Cliente real para Polymarket usando la API pÃºblica CLOB.
-    """
+class PolymarketClient:
+    def __init__(self, config_path: str = "config/mercury_config.json"):
+        self.config = json.loads(Path(config_path).read_text())
+        self.api_url = self.config.get("providers", {}).get("polymarket", {}).get("api_url", "")
+        if not self.api_url:
+            logging.warning("[PolymarketClient] api_url no definido en config.")
 
-    MARKETS_URL = "https://clob.polymarket.com/markets"
+    def get_markets_raw(self):
+        try:
+            resp = requests.get(self.api_url, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            logging.info(f"[PolymarketClient] Recibidos {len(data)} mercados crudos.")
+            return data
+        except Exception as e:
+            logging.error(f"[PolymarketClient] Error al obtener mercados: {e}")
+            return []
 
-    def get_markets(self):
-        """
-        Obtiene mercados reales desde Polymarket.
-        La API devuelve un dict con clave 'data' que contiene la lista de mercados.
-        """
-        response = requests.get(self.MARKETS_URL)
-        response.raise_for_status()
-        raw = response.json()
-
-        # La lista real de mercados estÃ¡ en raw["data"]
-        return raw.get("data", [])
-
-    def get_event(self, event_id):
-        """
-        Busca un mercado real por ID.
-        """
-        markets = self.get_markets()
-        for m in markets:
-            if str(m.get("id")) == str(event_id):
-                return m
-        return None
-
-    def get_probability(self, event_id):
-        """
-        Probabilidad implÃ­cita real basada en precios.
-        Polymarket usa precios de YES como probabilidad implÃ­cita.
-        """
-        market = self.get_event(event_id)
-        if not market:
-            return None
-
-        yes_price = market.get("yes_price")
-        if yes_price is None:
-            return None
-
-        return float(yes_price)
-
-    def get_history(self, event_id):
-        """
-        Polymarket no expone historia en la API pÃºblica.
-        """
-        return {"history": []}
-    def discover_markets(self):
-        raw_markets = self.get_markets()
-        markets = []
+    def normalize_for_mercury(self, raw_markets):
+        normalized = []
         for m in raw_markets:
-            q = m.get("question", "").lower()
-            if any(x in q for x in ["nfl","nba","mlb","nhl","ufc","mma"]):
-                markets.append({
+            try:
+                market_id = m.get("id") or m.get("market_id") or "unknown"
+                question = m.get("question") or m.get("title") or "unknown"
+                outcomes = m.get("outcomes") or []
+                prices = m.get("prices") or []
+
+                if not outcomes or not prices:
+                    continue
+
+                # Ejemplo simple: tomar primer outcome
+                p_market = float(prices[0]) if prices else 0.5
+
+                normalized.append({
                     "source": "polymarket",
-                    "market_id": m.get("condition_id") or m.get("id"),
-                    "league": m.get("question"),
-                    "season": 2026,
-                    "home": "TBD",
-                    "away": "TBD",
-                    "notes": m.get("question", "").replace(",", " "),
+                    "market_id": market_id,
+                    "event": question,
+                    "p_market": p_market,
+                    "raw": m
                 })
-        return markets
+            except Exception as e:
+                logging.warning(f"[PolymarketClient] Error normalizando mercado: {e}")
+                continue
 
+        logging.info(f"[PolymarketClient] Normalizados {len(normalized)} mercados para Mercury.")
+        return normalized
 
+    def get_markets_for_mercury(self):
+        raw = self.get_markets_raw()
+        return self.normalize_for_mercury(raw)
