@@ -53,3 +53,26 @@ class PolymarketClient:
     def get_markets_for_mercury(self):
         raw = self.get_markets_raw()
         return self.normalize_for_mercury(raw)
+# --- Añadido automáticamente por fix_providers.ps1 ---
+import json
+
+def get_markets_raw(self):
+    try:
+        resp = requests.get(self.api_url, timeout=10)
+        resp.raise_for_status()
+        raw = resp.json()
+
+        markets = []
+        for item in raw:
+            if isinstance(item, str):
+                markets.append(json.loads(item))
+            else:
+                markets.append(item)
+
+        logging.info(f"[PolymarketClient] Recibidos {len(markets)} mercados crudos (normalizados).")
+        return markets
+
+    except Exception as e:
+        logging.error(f"[PolymarketClient] Error al obtener mercados: {e}")
+        return []
+# --- Fin de bloque añadido ---

@@ -101,3 +101,24 @@ def place_order(ticker: str, side: str, count: float, price: float, client_order
     return resp.json()
 
 
+# --- AÃ±adido automÃ¡ticamente por fix_providers.ps1 ---
+def get_markets_public(limit: int = 200):
+    \"\"\"
+    Obtiene mercados pÃºblicos desde Kalshi sin autenticaciÃ³n.
+    Usa la URL correcta de producciÃ³n.
+    \"\"\"
+    import requests
+    url = "https://api.elections.kalshi.com/trade-api/v2/markets"
+    try:
+        resp = requests.get(url, timeout=8)
+        resp.raise_for_status()
+        data = resp.json()
+
+        if isinstance(data, dict) and "markets" in data:
+            return data["markets"][:limit]
+
+        return data
+    except Exception as e:
+        print("[Kalshi] Error obteniendo mercados pÃºblicos:", e)
+        return []
+# --- Fin de bloque aÃ±adido ---

@@ -62,3 +62,15 @@ class KalshiClient:
     def get_markets_for_mercury(self):
         raw = self.get_markets_raw()
         return self.normalize_for_mercury(raw)
+# --- Añadido automáticamente por fix_providers.ps1 ---
+from src.markets.kalshi import get_markets_public
+
+def get_markets_raw(self):
+    try:
+        markets = get_markets_public()
+        logging.info(f"[KalshiClient] Recibidos {len(markets)} mercados públicos desde Kalshi.")
+        return markets
+    except Exception as e:
+        logging.error(f"[KalshiClient] Error al obtener mercados: {e}")
+        return []
+# --- Fin de bloque añadido ---
