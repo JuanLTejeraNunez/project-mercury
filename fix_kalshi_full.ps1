@@ -1,4 +1,17 @@
-﻿import os
+<#
+    fix_kalshi_full.ps1
+    Reemplaza completamente src/markets/kalshi.py con una versión limpia y funcional.
+#>
+
+$Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $Root
+
+$kalshiPath = "src/markets/kalshi.py"
+
+Write-Host "Reemplazando archivo completo: $kalshiPath ..."
+
+@"
+import os
 import time
 import json
 import base64
@@ -100,6 +113,7 @@ def place_order(ticker: str, side: str, count: float, price: float, client_order
     resp = _request_with_retries("POST", "/portfolio/events/orders", json_body=payload)
     return resp.json()
 
+# --- NUEVA FUNCIÓN LIMPIA ---
 def get_markets_public(limit: int = 200):
     """
     Obtiene mercados públicos desde Kalshi sin autenticación.
@@ -117,3 +131,6 @@ def get_markets_public(limit: int = 200):
     except Exception as e:
         print("[Kalshi] Error obteniendo mercados públicos:", e)
         return []
+"@ | Set-Content $kalshiPath
+
+Write-Host "Archivo reemplazado correctamente."
