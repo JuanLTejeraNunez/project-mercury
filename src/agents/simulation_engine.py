@@ -1,6 +1,6 @@
-"""
+ï»¿"""
 SIMULATION DISABLED
-Este archivo ha sido desactivado automáticamente.
+Este archivo ha sido desactivado automÃ¡ticamente.
 Mercury ahora trabaja SOLO con datos reales.
 """
 
@@ -8,15 +8,15 @@ Mercury ahora trabaja SOLO con datos reales.
 # 
 # class MercurySimulationEngine:
 #     """
-#     Motor de cálculo basado en datos reales.
-#     No simula nada: solo calcula métricas reales.
+#     Motor de cÃ¡lculo basado en datos reales.
+#     No simula nada: solo calcula mÃ©tricas reales.
 #     """
 # 
 #     def calculate_pnl(self, allocations: List[Dict], outcomes: Dict[str, bool]):
 #         """
 #         Calcula PnL real basado en resultados reales.
 #         - allocations: lista de dicts con keys "id" y "stake"
-#         - outcomes: dict mapping id -> bool (True si ganó)
+#         - outcomes: dict mapping id -> bool (True si ganÃ³)
 #         Devuelve: dict con keys "pnl" y "win_rate"
 #         """
 #         pnl = 0.0
@@ -67,7 +67,7 @@ Mercury ahora trabaja SOLO con datos reales.
 #         """
 #         Calcula/simula PnL por cada probabilidad en `probs` y devuelve {'pnl': [...], 'win_rate': float}.
 #         - Intenta usar self.calculate_pnl(prob, stake, outcome) si existe; si no, usa stake*(2*prob-1).
-#         - win_rate se calcula como la fracción de outcomes simulados que resultaron en 1.
+#         - win_rate se calcula como la fracciÃ³n de outcomes simulados que resultaron en 1.
 #         """
 #         has_calc = hasattr(self, "calculate_pnl") and callable(getattr(self, "calculate_pnl"))
 #         try:
@@ -110,3 +110,5 @@ Mercury ahora trabaja SOLO con datos reales.
 #         win_rate = (wins / total) if total > 0 else 0.0
 #         return {"pnl": pnls, "win_rate": win_rate}
 # """
+
+

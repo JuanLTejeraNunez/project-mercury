@@ -7,3 +7,4 @@ def get_rugby_stats(player_id, team_id):
         "event_rate": r.get("tries_per_game", 0.5)
     }
 
+

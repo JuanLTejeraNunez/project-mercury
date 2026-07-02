@@ -7,3 +7,4 @@ def compute_internal_probability(event, player_id, team_id):
     avg_rate = (nfl["event_rate"] + ncaa["event_rate"]) / 2.0
     return avg_rate
 
+

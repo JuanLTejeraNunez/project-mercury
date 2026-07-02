@@ -26,3 +26,5 @@ class MercuryDataClient:
     def get_history(self, event_id):
         return self.client.get_history(event_id)
 
+
+

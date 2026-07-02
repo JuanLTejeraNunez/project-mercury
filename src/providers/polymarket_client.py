@@ -67,3 +67,4 @@ class PolymarketClient(BaseDataClient):
                 })
         return markets
 
+

@@ -7,3 +7,4 @@ def get_nfl_stats(player_id, team_id):
         "event_rate": r.get("touchdowns_per_game", 0.5)
     }
 
+

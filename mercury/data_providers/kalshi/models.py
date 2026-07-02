@@ -14,3 +14,4 @@ class KalshiMarket(BaseModel):
     away: Optional[str] = None
     notes: Optional[str] = None
 
+

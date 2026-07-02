@@ -21,3 +21,4 @@ class ClobClient:
 
     def place_order(self, market_id: str, side: str, size: float, price: float) -> Dict[str, Any]:
         return {"status": "ok", "order_id": "stub-123", "market_id": market_id}
+

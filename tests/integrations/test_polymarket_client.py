@@ -71,3 +71,4 @@ def test_get_authenticated_client_ok(monkeypatch):
     assert client.signature_type == 3
     assert client.funder_address == "0xDEPOSIT"
 
+

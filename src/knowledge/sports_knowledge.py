@@ -86,3 +86,4 @@ def enrich_market_info(title: str, ticker: str = "") -> dict:
         'league': league,
         'team': team
     }
+

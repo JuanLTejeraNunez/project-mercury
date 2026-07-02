@@ -15,3 +15,4 @@
     def get_history(self, event_id):
         raise NotImplementedError("get_history() debe ser implementado por el proveedor.")
 
+

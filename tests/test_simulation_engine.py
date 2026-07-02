@@ -16,3 +16,4 @@ def test_simulate_pnl():
     assert "trades" in result
     assert result["trades"] == len(probs)
 
+

@@ -27,3 +27,4 @@ def build_markets_csv():
 if __name__ == "__main__":
     build_markets_csv()
 
+

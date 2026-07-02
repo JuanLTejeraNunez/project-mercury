@@ -13,3 +13,4 @@ def accuracy(predictions: List[float], outcomes: List[int], threshold: float = 0
     correct = sum(1 for d, o in zip(decisions, outcomes) if d == o)
     return correct / len(outcomes)
 
+

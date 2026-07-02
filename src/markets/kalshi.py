@@ -100,3 +100,4 @@ def place_order(ticker: str, side: str, count: float, price: float, client_order
     resp = _request_with_retries("POST", "/portfolio/events/orders", json_body=payload)
     return resp.json()
 
+

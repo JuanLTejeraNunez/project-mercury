@@ -111,3 +111,4 @@ class KalshiClient:
     def cancel_order(self, order_id: str):
         return self._request("POST", "orders/cancel", {"order_id": order_id})
 
+

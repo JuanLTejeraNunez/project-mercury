@@ -9,3 +9,4 @@ def compute_internal_probability(event, player_id, team_id):
     avg_rate = (mlb["event_rate"] + espn["event_rate"] + fang["event_rate"]) / 3.0
     return avg_rate
 
+

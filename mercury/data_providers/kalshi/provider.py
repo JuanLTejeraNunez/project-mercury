@@ -22,3 +22,4 @@ class KalshiProvider:
         async for update in self.ws.subscribe(tickers):
             yield update
 
+

@@ -7,3 +7,4 @@ def get_mlb_stats(player_id, team_id):
         "event_rate": r.get("stats", [{}])[0].get("splits", [{}])[0].get("stat", {}).get("avg", 0.1)
     }
 
+

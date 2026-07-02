@@ -1,9 +1,11 @@
 ﻿import math
 from dataclasses import dataclass
 from typing import Dict, Any, List
+from datetime import datetime, timedelta
 
-from src.knowledge.sports_classifier import classify_market, is_sport_market
+from src.knowledge.sports_classifier import is_sport_market
 from src.knowledge.sports_knowledge import enrich_market_info
+from src.analysis.probability_model import compute_probability
 
 
 @dataclass
@@ -19,6 +21,12 @@ class Opportunity:
     edge: float
     recommended_side: str
     max_stake: float
+    resolution_time: str
+    expected_payout: float
+    expected_return: float
+    review_at: str
+    result_status: str = "pending"
+    bankroll_after_result: float = None
 
 
 def _safe_float(value: Any, default: float = 0.0) -> float:
@@ -36,50 +44,13 @@ def _implied_prob(price: float) -> float:
     return price
 
 
-def _model_probability(market: Dict[str, Any]) -> float:
-    """
-    Modelo avanzado:
-    - liquidez
-    - volumen
-    - status
-    - sport knowledge
-    """
-    liquidity = _safe_float(market.get("liquidity_dollars", 0))
-    volume = _safe_float(market.get("volume_fp", market.get("volume_24h_fp", 0)))
-    status = market.get("status", "active")
-
-    base = 0.5
-
-    # Liquidez → más información
-    base += min(liquidity / 2000.0, 0.15)
-
-    # Volumen → más participantes
-    base += min(volume / 2000.0, 0.15)
-
-    # Mercados cerrados → menos confiables
-    if status != "active":
-        base -= 0.1
-
-    # Clamp
-    return max(0.05, min(base, 0.95))
-
-
 def extract_opportunities(markets: List[Dict[str, Any]], bankroll: float, min_edge: float = 0.02) -> List[Opportunity]:
-    """
-    Extrae oportunidades deportivas avanzadas:
-    - Clasificación deportiva
-    - Enriquecimiento de mercado
-    - Edge avanzado
-    - Recomendación de lado
-    - Cálculo de stake
-    """
     opportunities = []
 
     for m in markets:
         title = m.get("title", m.get("question", ""))
         ticker = m.get("ticker", m.get("question_id", ""))
 
-        # Clasificación deportiva
         if not is_sport_market(title, ticker):
             continue
 
@@ -88,19 +59,17 @@ def extract_opportunities(markets: List[Dict[str, Any]], bankroll: float, min_ed
         league = info["league"]
         team = info["team"]
 
-        # Precios
         yes_price = _safe_float(m.get("yes_ask_dollars", m.get("yes_price", 0)))
         no_price = _safe_float(m.get("no_ask_dollars", 0))
 
         implied_yes = _implied_prob(yes_price)
         implied_no = _implied_prob(no_price)
 
-        model_prob = _model_probability(m)
+        model_prob = compute_probability(m)
 
         edge_yes = model_prob - implied_yes
         edge_no = (1.0 - model_prob) - implied_no
 
-        # Selección del lado
         if edge_yes >= min_edge and edge_yes >= edge_no:
             side = "yes"
             edge = edge_yes
@@ -112,8 +81,13 @@ def extract_opportunities(markets: List[Dict[str, Any]], bankroll: float, min_ed
         else:
             continue
 
-        # Stake basado en Kelly-like
         max_stake = bankroll * min(edge * 2.0, 0.1)
+
+        resolution_time = m.get("resolution_time", "unknown")
+        review_at = (datetime.utcnow() + timedelta(days=3)).isoformat()
+
+        expected_payout = max_stake * edge
+        expected_return = expected_payout / max_stake if max_stake > 0 else 0.0
 
         opportunities.append(
             Opportunity(
@@ -128,9 +102,13 @@ def extract_opportunities(markets: List[Dict[str, Any]], bankroll: float, min_ed
                 edge=edge,
                 recommended_side=side,
                 max_stake=max_stake,
+                resolution_time=resolution_time,
+                expected_payout=expected_payout,
+                expected_return=expected_return,
+                review_at=review_at,
             )
         )
 
-    # Ordenar por edge descendente
     opportunities.sort(key=lambda o: o.edge, reverse=True)
     return opportunities
+

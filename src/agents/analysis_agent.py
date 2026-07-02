@@ -1,202 +1,63 @@
-﻿import logging
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Any, Optional
+﻿# analysis_agent.py
+"""
+Agent de análisis: lee configs/sports_markets.csv, consulta probabilidades y calcula stake (Kelly).
+Usa market_router.place_bet_for para ejecutar (respeta DRY_RUN).
+"""
+import os
+import csv
+from dotenv import load_dotenv
+from src.integrations import market_router
 
-from src.router.sports_market_router import SportsMarketRouter
+load_dotenv()
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+DEFAULT_BANKROLL = float(os.getenv("DEFAULT_BANKROLL", "1000.0"))
+DRY_RUN = os.getenv("DRY_RUN", "true").lower() in ("1", "true", "yes")
 
-
-@dataclass
-class BetOpportunity:
-    source: str
-    market_id: str
-    title: str
-    recommended_side: str
-    implied_prob: float
-    model_prob: float
-    edge: float
-    max_stake: float
-
-
-def _safe_float(value: Any, default: float = 0.0) -> float:
-    try:
-        if value is None:
-            return default
-        return float(value)
-    except Exception:
-        return default
-
-
-def _implied_prob_from_price(price_dollars: float) -> float:
-    if price_dollars <= 0:
+def kelly_fraction(p: float, b: float) -> float:
+    q = 1.0 - p
+    if b <= 0:
         return 0.0
-    if price_dollars >= 1:
-        return 1.0
-    return price_dollars
+    f = (b * p - q) / b
+    return max(0.0, min(1.0, f))
 
-
-def _model_probability_stub(market: Dict[str, Any]) -> float:
-    liquidity = _safe_float(market.get("liquidity_dollars", 0.0))
-    volume = _safe_float(market.get("volume_fp", market.get("volume_24h_fp", 0.0)))
-
-    base = 0.5
-    base += min(liquidity / 1000.0, 0.1)
-    base += min(volume / 1000.0, 0.1)
-
-    if base < 0.05:
-        base = 0.05
-    if base > 0.95:
-        base = 0.95
-    return base
-
-
-def _build_kalshi_opportunities(markets, bankroll, min_edge, sport_filter=None):
-    opportunities = []
-
-    for m in markets:
-        title = m.get("title", "")
-        ticker = m.get("ticker", "")
-        status = m.get("status", "")
-
-        if status != "active":
-            continue
-
-        if sport_filter and sport_filter.lower() not in title.lower():
-            continue
-
-        yes_price = _safe_float(m.get("yes_ask_dollars", 0.0))
-        no_price = _safe_float(m.get("no_ask_dollars", 0.0))
-
-        implied_yes = _implied_prob_from_price(yes_price)
-        implied_no = _implied_prob_from_price(no_price)
-
-        model_prob = _model_probability_stub(m)
-
-        edge_yes = model_prob - implied_yes
-        edge_no = (1.0 - model_prob) - implied_no
-
-        if edge_yes >= min_edge and edge_yes >= edge_no:
-            recommended_side = "yes"
-            edge = edge_yes
-            implied = implied_yes
-        elif edge_no >= min_edge:
-            recommended_side = "no"
-            edge = edge_no
-            implied = implied_no
+def analyze_market_row(row):
+    source = row.get("source")
+    market_id = row.get("market_id")
+    if not source or not market_id:
+        print("Fila inválida en CSV:", row)
+        return
+    try:
+        p = market_router.get_market_probability_for(source, market_id)
+    except Exception as e:
+        print(f"Error analyzing {source} {market_id}: {e}")
+        return
+    if p <= 0:
+        print(f"[{source}] market {market_id}: no data (p={p})")
+        return
+    b = (1.0 / p) - 1.0
+    f = kelly_fraction(p, b)
+    stake = DEFAULT_BANKROLL * f
+    print(f"[{source}] market={market_id} p={p:.4f} b={b:.4f} kelly={f:.4f} stake={stake:.2f}")
+    # Example decision: if kelly fraction > 0.02, simulate placing an order
+    if f > 0.02:
+        client_order_id = f"auto-{source}-{market_id}"
+        resp = market_router.place_bet_for(source, ticker=market_id, side="buy", count=1, price=p, client_order_id=client_order_id)
+        if DRY_RUN:
+            print(f"[DRY_RUN] simulated order: {resp}")
         else:
-            continue
+            print(f"[EXECUTED] order response: {resp}")
 
-        max_stake = bankroll * min(edge * 2.0, 0.1)
-
-        opportunities.append(
-            BetOpportunity(
-                source="kalshi",
-                market_id=ticker,
-                title=title,
-                recommended_side=recommended_side,
-                implied_prob=implied,
-                model_prob=model_prob,
-                edge=edge,
-                max_stake=max_stake,
-            )
-        )
-
-    return opportunities
-
-
-def _build_polymarket_opportunities(markets, bankroll, min_edge, sport_filter=None):
-    opportunities = []
-
-    for m in markets:
-        title = m.get("question", "")
-        question_id = m.get("question_id", "")
-        status = m.get("status", "open")
-
-        if status != "open":
-            continue
-
-        if sport_filter and sport_filter.lower() not in title.lower():
-            continue
-
-        yes_price = _safe_float(m.get("yes_price", 0.0))
-        implied_yes = _implied_prob_from_price(yes_price)
-        model_prob = _model_probability_stub(m)
-
-        edge_yes = model_prob - implied_yes
-
-        if edge_yes < min_edge:
-            continue
-
-        max_stake = bankroll * min(edge_yes * 2.0, 0.1)
-
-        opportunities.append(
-            BetOpportunity(
-                source="polymarket",
-                market_id=question_id,
-                title=title,
-                recommended_side="yes",
-                implied_prob=implied_yes,
-                model_prob=model_prob,
-                edge=edge_yes,
-                max_stake=max_stake,
-            )
-        )
-
-    return opportunities
-
-
-def find_sports_opportunities(sport, bankroll, min_edge=0.02):
-    router = SportsMarketRouter()
-    all_markets = router.get_all_markets()
-
-    kalshi_markets = all_markets.get("kalshi", []) or []
-    poly_markets = all_markets.get("polymarket", []) or []
-
-    kalshi_ops = _build_kalshi_opportunities(kalshi_markets, bankroll, min_edge, sport)
-    poly_ops = _build_polymarket_opportunities(poly_markets, bankroll, min_edge, sport)
-
-    opportunities = kalshi_ops + poly_ops
-    opportunities.sort(key=lambda o: o.edge, reverse=True)
-
-    return opportunities
-
-
-def evaluate_and_place_bet(sport, event, entity_id, team_id, market_id, bankroll, min_edge=0.02):
-    logger.info(
-        "Evaluating opportunities: sport=%s event=%s entity_id=%s team_id=%s bankroll=%.2f",
-        sport, event, entity_id, team_id, bankroll
-    )
-
-    opportunities = find_sports_opportunities(sport, bankroll, min_edge)
-
-    if market_id:
-        opportunities = [o for o in opportunities if o.market_id == market_id]
-
-    result = {
-        "sport": sport,
-        "event": event,
-        "entity_id": entity_id,
-        "team_id": team_id,
-        "bankroll": bankroll,
-        "min_edge": min_edge,
-        "opportunities": [asdict(o) for o in opportunities],
-        "note": "Este agente identifica oportunidades cuantitativas, no ejecuta apuestas reales."
-    }
-
-    logger.info("Found %d opportunities", len(opportunities))
-    return result
-
+def run_once():
+    cfg = os.path.join("configs", "sports_markets.csv")
+    if not os.path.exists(cfg):
+        print("No se encontró configs/sports_markets.csv. Crea el archivo con mercados.")
+        return
+    with open(cfg, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader([line for line in f if not line.strip().startswith("#")])
+        for row in reader:
+            analyze_market_row(row)
 
 if __name__ == "__main__":
-    demo = evaluate_and_place_bet(
-        sport="soccer",
-        event="demo",
-        entity_id="demo_entity",
-        team_id="demo_team",
-        market_id=None,
-        bankroll=1000.0,
-        min_edge=0.02,
-    )
-    print(demo)
+    run_once()
+
+

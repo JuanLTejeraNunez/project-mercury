@@ -22,3 +22,4 @@ def place_bet_for(source: str, **kwargs) -> Dict[str, Any]:
         return kalshi.place_order(kwargs["ticker"], kwargs["side"], kwargs["count"], kwargs["price"], kwargs["client_order_id"])
     raise ValueError(f"Place bet not implemented for source: {source}")
 
+

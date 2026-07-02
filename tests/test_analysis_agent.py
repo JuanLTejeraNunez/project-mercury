@@ -19,3 +19,4 @@ def test_brier_score_and_accuracy():
     assert 0.0 <= score <= 1.0
     assert 0.0 <= acc <= 1.0
 
+

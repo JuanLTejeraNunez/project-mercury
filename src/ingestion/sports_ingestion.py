@@ -59,3 +59,4 @@ def load_and_enrich_csv(path: str) -> List[Dict[str, Any]]:
     raw = load_sports_csv(path)
     enriched = enrich_csv_markets(raw)
     return enriched
+

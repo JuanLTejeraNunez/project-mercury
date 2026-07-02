@@ -1,9 +1,9 @@
-from typing import List, Dict
+﻿from typing import List, Dict
 
 class MercuryBankrollEngine:
     """
     Motor de bankroll:
-    - evalúa resultados de mercados
+    - evalÃºa resultados de mercados
     - calcula PnL
     - calcula bankroll final
     """
@@ -49,4 +49,6 @@ class MercuryBankrollEngine:
             "final_bankroll": bankroll,
             "details": details,
         }
+
+
 

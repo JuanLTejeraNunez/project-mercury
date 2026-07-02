@@ -19,3 +19,4 @@ def load_markets_from_csv(csv_path):
             )
     return markets
 
+

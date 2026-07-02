@@ -7,3 +7,4 @@ def get_fangraphs_stats(player_id):
         "event_rate": r.get("wOBA", 0.1)
     }
 
+

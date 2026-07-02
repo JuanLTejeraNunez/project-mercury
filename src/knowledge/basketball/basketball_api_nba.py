@@ -8,3 +8,4 @@ def get_nba_stats(player_id, team_id):
         "event_rate": r.get("response", [{}])[0].get("points", 10.0)
     }
 
+

@@ -7,3 +7,4 @@ def get_boxing_stats(fighter_id):
         "event_rate": r.get("ko_rate", 0.5)
     }
 
+

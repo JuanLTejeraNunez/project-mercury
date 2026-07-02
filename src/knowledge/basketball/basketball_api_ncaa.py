@@ -7,3 +7,4 @@ def get_ncaa_stats(player_id, team_id):
         "event_rate": r.get("points_per_game", 12.0)
     }
 
+

@@ -11,3 +11,4 @@
     def __repr__(self):
         return f"<Market {self.source}:{self.market_id} {self.league}>"
 
+

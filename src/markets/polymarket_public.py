@@ -22,3 +22,4 @@ def get_market_probability(market_id: str) -> float:
     except Exception:
         return 0.0
 
+

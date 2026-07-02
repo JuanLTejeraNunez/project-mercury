@@ -30,3 +30,4 @@ def kalshi_test_env(tmp_path_factory):
 
     # limpiar variables de entorno al finalizar la sesión
     mp.undo()
+

@@ -7,3 +7,4 @@ def get_mma_stats(fighter_id):
         "event_rate": r.get("finish_rate", 0.5)
     }
 
+

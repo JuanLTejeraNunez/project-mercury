@@ -75,3 +75,4 @@ def compute_probability(market: Dict[str, Any]) -> float:
 
     # Normalización final
     return _normalize(base, 0.05, 0.95)
+

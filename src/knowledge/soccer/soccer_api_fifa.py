@@ -7,3 +7,4 @@ def get_fifa_stats(player_id, team_id):
         "event_rate": r.get("goals_per_game", 0.3)
     }
 
+

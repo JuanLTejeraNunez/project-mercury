@@ -30,3 +30,4 @@ def test_discover_markets_structure(monkeypatch):
     assert len(markets) == 1
     assert markets[0]["category"] == "science"
 
+

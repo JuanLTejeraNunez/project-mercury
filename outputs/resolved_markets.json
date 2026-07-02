@@ -1,0 +1,9 @@
+﻿[
+  {
+    "source": "polymarket",
+    "market_id": "0x5cad07ed712bb61487ee209f14bea3da675c3c1c24ab4c8eeaca4ac60e545f9b",
+    "outcome": "yes",
+    "simulated": true,
+    "note": "Simulated result for testing pipeline. Does NOT represent real market resolution."
+  }
+]

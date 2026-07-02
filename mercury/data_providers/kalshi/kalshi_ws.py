@@ -63,3 +63,4 @@ class KalshiWebSocket:
                 msg = await ws.recv()
                 yield json.loads(msg)
 
+

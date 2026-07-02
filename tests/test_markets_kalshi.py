@@ -11,3 +11,4 @@ def test_get_market_probability_handles_empty(monkeypatch):
     p = kalshi.get_market_probability("nonexistent")
     assert p == 0.0
 
+

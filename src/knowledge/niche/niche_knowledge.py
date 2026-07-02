@@ -14,3 +14,4 @@ def compute_internal_probability(event, entity_id, team_id=None):
         return get_rugby_stats(entity_id, team_id)["event_rate"]
     return 0.1
 
+

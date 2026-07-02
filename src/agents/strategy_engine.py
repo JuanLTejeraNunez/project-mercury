@@ -1,4 +1,4 @@
-from typing import List, Dict
+﻿from typing import List, Dict
 
 class MercuryStrategyEngine:
     """
@@ -31,4 +31,6 @@ class MercuryStrategyEngine:
                 "stake": stake,
             })
         return allocations
+
+
 

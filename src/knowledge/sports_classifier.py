@@ -45,3 +45,4 @@ def classify_market(title: str, ticker: str = "") -> str:
 
 def is_sport_market(title: str, ticker: str = "") -> bool:
     return classify_market(title, ticker) != 'unknown'
+
