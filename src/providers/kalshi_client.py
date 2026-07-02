@@ -63,7 +63,7 @@ class KalshiClient:
         raw = self.get_markets_raw()
         return self.normalize_for_mercury(raw)
 # --- Añadido automáticamente por fix_providers.ps1 ---
-from src.markets.kalshi import get_markets_public
+from markets.kalshi import get_markets_public
 
 def get_markets_raw(self):
     try:
