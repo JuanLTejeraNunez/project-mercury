@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "database": {
+    "path": "data/memory.sqlite",
+    "timeout": 5
+  },
+  "logs": {
+    "loop_log": "logs/mercury_loop.log",
+    "agent_log": "logs/agent_20260701.log"
+  },
+  "circuit_breaker": {
+    "max_drawdown_pct": 0.25,
+    "max_consecutive_losses": 5,
+    "min_bankroll": 100
+  },
+  "mercury_loop": {
+    "poll_interval_seconds": 30,
+    "max_opportunities_per_cycle": 10,
+    "min_edge_threshold": 0.01
+  },
+  "providers": {
+    "polymarket": {
+      "enabled": true,
+      "api_url": "https://clob.polymarket.com/markets"
+    },
+    "kalshi": {
+      "enabled": true,
+      "api_url": "https://api.kalshi.com/v1/markets"
+    }
+  }
+}
