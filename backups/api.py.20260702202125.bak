@@ -1,0 +1,154 @@
+﻿# src/control/api.py
+"""
+Control API con token y endpoints de Decision Card:
+- POST /submit_decision  -> el agente envía la Decision Card (no coloca la apuesta)
+- GET  /decisions        -> lista decisiones pendientes y ya colocadas
+- POST /approve_decision -> operador aprueba una decisión y la API llama a BetManager.place_bet
+- Otros endpoints: /bets, /status, /force_check, /stop, /start
+"""
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel
+from typing import Any, Dict, List, Optional
+from pathlib import Path
+import os
+import threading
+import uuid
+import json
+
+from core.bet_manager import BetManager
+
+app = FastAPI(title="Mercury BetManager Control API", version="0.3")
+
+security = HTTPBearer(auto_error=False)
+
+def require_token(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    expected = os.getenv("CONTROL_API_TOKEN")
+    if expected is None or creds is None or creds.scheme.lower() != "bearer" or creds.credentials != expected:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return True
+
+_bm_lock = threading.Lock()
+_bm: Optional[BetManager] = None
+
+def get_bm() -> BetManager:
+    global _bm
+    with _bm_lock:
+        if _bm is None:
+            _bm = BetManager()
+        return _bm
+
+class DecisionCard(BaseModel):
+    market_id: str
+    side: str
+    stake_proposed: float
+    stake_max: Optional[float] = None
+    expected_roi: Optional[float] = None
+    time_horizon: Optional[str] = None
+    rationale: Optional[str] = None
+    key_signals: Optional[Dict[str, Any]] = None
+    decision_id: Optional[str] = None
+
+@app.post("/submit_decision", dependencies=[Depends(require_token)])
+def submit_decision(card: DecisionCard):
+    # store as a pending decision in bets table with status 'pending'
+    bm = get_bm()
+    decision_id = card.decision_id or str(uuid.uuid4())
+    bet_id = f"decision-{decision_id}"
+    # store with stake 0 for now; operator must approve to set stake and place
+    bm.place_bet(bet_id=bet_id,
+                 market_id=card.market_id,
+                 side=card.side,
+                 stake=0.0,
+                 expected_close=None,
+                 decision_reason=card.rationale,
+                 expected_roi=card.expected_roi,
+                 time_horizon=card.time_horizon,
+                 stake_requested=card.stake_proposed,
+                 decision_metadata={"key_signals": card.key_signals, "submitted_at": str(__import__('datetime').datetime.now(__import__('datetime').timezone.utc))})
+    return {"message": "Decision submitted", "decision_id": decision_id, "bet_id": bet_id}
+
+@app.get("/decisions", dependencies=[Depends(require_token)])
+def list_decisions(limit: int = 100):
+    bm = get_bm()
+    try:
+        return bm.list_decisions(limit=limit)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ApproveRequest(BaseModel):
+    decision_id: str
+    stake: float
+    expected_close: Optional[str] = None
+    operator_note: Optional[str] = None
+
+@app.post("/approve_decision", dependencies=[Depends(require_token)])
+def approve_decision(req: ApproveRequest):
+    bm = get_bm()
+    bet_id = f"decision-{req.decision_id}"
+    # fetch existing decision row
+    rows = []
+    with bm._conn() as conn:
+        cur = conn.execute("SELECT bet_id, market_id, side, stake_requested, decision_reason, expected_roi, time_horizon, decision_metadata FROM bets WHERE bet_id = ?", (bet_id,))
+        rows = cur.fetchall()
+    if not rows:
+        raise HTTPException(status_code=404, detail="Decision not found")
+    row = rows[0]
+    market_id = row[1]
+    side = row[2]
+    stake_requested = row[3] or req.stake
+    decision_reason = row[4]
+    expected_roi = row[5]
+    time_horizon = row[6]
+    try:
+        # update the bet row with real stake and expected_close, change status to open
+        with bm._conn() as conn:
+            conn.execute("UPDATE bets SET stake = ?, expected_close = ?, status = ? WHERE bet_id = ?",
+                         (float(req.stake), req.expected_close, "open", bet_id))
+            # append operator note to decision_metadata
+            dm = row[7]
+            try:
+                dm_obj = json.loads(dm) if dm else {}
+            except Exception:
+                dm_obj = {"raw": dm}
+            if req.operator_note:
+                dm_obj["operator_note"] = req.operator_note
+            dm_obj["approved_at"] = str(__import__('datetime').datetime.now(__import__('datetime').timezone.utc))
+            conn.execute("UPDATE bets SET decision_metadata = ? WHERE bet_id = ?", (json.dumps(dm_obj, default=str, ensure_ascii=False), bet_id))
+            conn.commit()
+        return {"message": "Decision approved and bet opened", "bet_id": bet_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/bets", dependencies=[Depends(require_token)])
+def list_bets():
+    bm = get_bm()
+    return bm.list_open_bets()
+
+@app.get("/status", dependencies=[Depends(require_token)])
+def status():
+    bm = get_bm()
+    wt = getattr(bm, "_worker_thread", None)
+    running = bool(wt and wt.is_alive())
+    return {"worker_running": running}
+
+@app.post("/force_check", dependencies=[Depends(require_token)])
+def force_check():
+    bm = get_bm()
+    bm._check_due_bets_once()
+    return {"message": "Forced check executed"}
+
+@app.post("/stop", dependencies=[Depends(require_token)])
+def stop_worker():
+    Path("data").mkdir(parents=True, exist_ok=True)
+    Path("data/stop_worker").write_text("stop")
+    return {"message": "Stop flag created"}
+
+@app.post("/start", dependencies=[Depends(require_token)])
+def start_worker():
+    bm = get_bm()
+    wt = getattr(bm, "_worker_thread", None)
+    if wt is not None and wt.is_alive():
+        return {"message": "Worker already running"}
+    bm.start_worker()
+    return {"message": "Worker started"}

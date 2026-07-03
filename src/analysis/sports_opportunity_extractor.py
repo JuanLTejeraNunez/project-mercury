@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 
-from src.knowledge.sports_classifier import is_sport_market
-from src.knowledge.sports_knowledge import enrich_market_info
-from src.analysis.probability_model import compute_probability
+from knowledge.sports_classifier import is_sport_market
+from knowledge.sports_knowledge import enrich_market_info
+from analysis.probability_model import compute_probability
 
 
 @dataclass
@@ -111,4 +111,5 @@ def extract_opportunities(markets: List[Dict[str, Any]], bankroll: float, min_ed
 
     opportunities.sort(key=lambda o: o.edge, reverse=True)
     return opportunities
+
 

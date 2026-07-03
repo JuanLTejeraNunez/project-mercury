@@ -1,6 +1,6 @@
 ﻿import csv
-from src.providers.polymarket_client import PolymarketClient
-from src.providers.kalshi_client import KalshiClient
+from providers.polymarket_client import PolymarketClient
+from providers.kalshi_client import KalshiClient
 
 def build_markets_csv():
     markets = []
@@ -26,5 +26,6 @@ def build_markets_csv():
 
 if __name__ == "__main__":
     build_markets_csv()
+
 
 

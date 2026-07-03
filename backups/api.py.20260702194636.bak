@@ -1,0 +1,94 @@
+﻿# src/control/api.py
+"""
+Control API para BetManager
+Endpoints:
+  GET  /bets          -> lista apuestas abiertas
+  GET  /status        -> estado del worker (running: true/false)
+  POST /force_check   -> fuerza una pasada de comprobación (sin arrancar worker)
+  POST /stop          -> crea data/stop_worker para que el worker se detenga en la próxima iteración
+  POST /start         -> arranca el worker en este proceso (si no está corriendo)
+Nota: este servicio asume PYTHONPATH apunta a src (ej. export PYTHONPATH=src).
+"""
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import threading
+import os
+from pathlib import Path
+from typing import Any, Dict, List
+
+# Importa BetManager desde package root (PYTHONPATH=src)
+from core.bet_manager import BetManager
+
+app = FastAPI(title="Mercury BetManager Control API", version="0.1")
+
+# Singleton BetManager para este proceso
+_bm_lock = threading.Lock()
+_bm: BetManager | None = None
+
+def get_bm() -> BetManager:
+    global _bm
+    with _bm_lock:
+        if _bm is None:
+            _bm = BetManager()
+        return _bm
+
+class ForceCheckResponse(BaseModel):
+    open_bets_count: int
+    message: str
+
+class StatusResponse(BaseModel):
+    worker_running: bool
+
+@app.get("/bets", response_model=List[Dict[str, Any]])
+def list_bets():
+    bm = get_bm()
+    try:
+        return bm.list_open_bets()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/status", response_model=StatusResponse)
+def status():
+    bm = get_bm()
+    running = False
+    # introspect worker thread
+    try:
+        wt = getattr(bm, "_worker_thread", None)
+        if wt is not None and wt.is_alive():
+            running = True
+    except Exception:
+        running = False
+    return {"worker_running": running}
+
+@app.post("/force_check", response_model=ForceCheckResponse)
+def force_check():
+    bm = get_bm()
+    try:
+        open_before = len(bm.list_open_bets())
+        bm._check_due_bets_once()
+        return {"open_bets_count": open_before, "message": "Forced check executed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/stop")
+def stop_worker():
+    # create stop flag file for any running worker to detect
+    try:
+        Path("data").mkdir(parents=True, exist_ok=True)
+        Path("data/stop_worker").write_text("stop")
+        return {"message": "Stop flag created (data/stop_worker). Worker will stop on next iteration."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/start")
+def start_worker():
+    bm = get_bm()
+    try:
+        # start worker with default interval if not running
+        wt = getattr(bm, "_worker_thread", None)
+        if wt is not None and wt.is_alive():
+            return {"message": "Worker already running"}
+        bm.start_worker()
+        return {"message": "Worker started"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

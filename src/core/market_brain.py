@@ -1,53 +1,145 @@
-# src/core/market_brain.py
-# Mercury Market Brain: orquesta engine, analisis y estrategia en un ciclo de sandbox.
+﻿# src/core/market_brain.py
+"""
+Mercury Market Brain - Orquestador principal (entrypoint).
+Integra BetManager para que el mismo agente registre y verifique sus apuestas.
+No hay simulaciones: todas las resoluciones se consultan contra las APIs reales.
+"""
 
-import os
-import sys
+from __future__ import annotations
+import logging
+import json
 from datetime import datetime, timezone
+from typing import List, Dict, Any, Optional
+import os
 
-# Asegurar que src este en el PYTHONPATH
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-SRC_DIR = os.path.join(BASE_DIR, "src")
-if SRC_DIR not in sys.path:
-    sys.path.append(SRC_DIR)
+logger = logging.getLogger("market_brain")
+logging.basicConfig(level=os.getenv("MERCURY_LOG_LEVEL", "INFO"))
 
-from core.engine import build_unified_dataset
-from core.analysis_agent import analyze_markets, filter_top_signals
-from core.strategy_engine import generate_decisions, summarize_decisions
+# Core pipeline pieces (pueden venir de src/core/* parcheados)
+try:
+    from core.engine import build_unified_dataset
+    from core.analysis_agent import analyze_markets, filter_top_signals
+    from core.strategy_engine import generate_decisions, summarize_decisions
+except Exception:
+    # Fallback a imports relativos si se ejecuta como paquete
+    from .engine import build_unified_dataset
+    from .analysis_agent import analyze_markets, filter_top_signals
+    from .strategy_engine import generate_decisions, summarize_decisions
 
+# BetManager (gestiona paper bets y worker interno)
+from core.bet_manager import BetManager
 
-def run_sandbox_cycle():
-    """Ejecuta un ciclo completo de sandbox de Mercury."""
-    print("[BRAIN] Iniciando ciclo de sandbox...")
+# Config
+TOP_N = int(os.getenv("MERCURY_TOP_N", "100"))
+MIN_PRIORITY = float(os.getenv("MERCURY_MIN_PRIORITY", "5.0"))
+DEFAULT_STAKE = float(os.getenv("MERCURY_DEFAULT_STAKE", "1.0"))
 
-    markets = build_unified_dataset()
-    print(f"[BRAIN] Mercados cargados: {len(markets)}")
+def _serialize_decisions(decisions: List[Any]) -> List[Any]:
+    serialized = []
+    for d in decisions:
+        if isinstance(d, dict):
+            serialized.append(d)
+        else:
+            try:
+                serialized.append(d.__dict__)
+            except Exception:
+                serialized.append(str(d))
+    return serialized
 
-    signals = analyze_markets(markets)
-    print(f"[BRAIN] Senales generadas: {len(signals)}")
+def _extract_market_id_from_signal(signal: Dict[str, Any]) -> Optional[str]:
+    # Intentar varios campos comunes
+    for key in ("market_id", "id", "symbol", "market"):
+        if key in signal and signal.get(key):
+            return str(signal.get(key))
+    return None
 
-    top_signals = filter_top_signals(signals, top_n=100, min_priority=5.0)
-    print(f"[BRAIN] Top senales seleccionadas: {len(top_signals)}")
+def _extract_expected_close_from_snapshot(snapshot: Dict[str, Any]) -> Optional[str]:
+    for key in ("close_time", "end_time", "resolution_time", "close_at", "expected_close"):
+        if key in snapshot and snapshot.get(key):
+            return snapshot.get(key)
+    return None
 
-    decisions = generate_decisions(top_signals)
-    summary = summarize_decisions(decisions)
+def run_cycle_and_place_bets(bm: BetManager) -> Dict[str, Any]:
+    logger.info("[BRAIN] Iniciando ciclo...")
+    try:
+        markets = build_unified_dataset() or []
+        if not isinstance(markets, list):
+            raise TypeError("build_unified_dataset must return a list")
+        logger.info("[BRAIN] Mercados cargados: %d", len(markets))
 
-    print("[BRAIN] Resumen de decisiones:")
-    print(f"  Total decisiones: {summary['total']}")
-    for action, count in summary["actions_count"].items():
-        print(f"  {action}: {count}")
+        signals = analyze_markets(markets) or []
+        if not isinstance(signals, list):
+            raise TypeError("analyze_markets must return a list")
+        logger.info("[BRAIN] Señales generadas: %d", len(signals))
 
-    snapshot = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "markets_count": len(markets),
-        "signals_count": len(signals),
-        "top_signals_count": len(top_signals),
-        "decisions": decisions,
-        "summary": summary,
-    }
+        top_signals = filter_top_signals(signals, top_n=TOP_N, min_priority=MIN_PRIORITY) or []
+        if not isinstance(top_signals, list):
+            raise TypeError("filter_top_signals must return a list")
+        logger.info("[BRAIN] Top señales seleccionadas: %d", len(top_signals))
 
-    return snapshot
+        decisions = generate_decisions(top_signals) or []
+        if not isinstance(decisions, list):
+            raise TypeError("generate_decisions must return a list")
 
+        # **Aquí** el agente registra paper bets por sus decisiones relevantes.
+        placed = []
+        for dec, sig in zip(decisions, top_signals):
+            # decidir si la decisión implica una apuesta
+            action = dec.get("action") or dec.get("decision") or ""
+            if action.lower() in ("buy", "consider_long_yes", "consider_long_no", "place_bet"):
+                market_id = _extract_market_id_from_signal(sig) or sig.get("market_id")
+                if not market_id:
+                    logger.warning("No market_id found for signal; skipping bet registration: %s", sig)
+                    continue
+                # intentar obtener expected_close consultando snapshot vía BetManager
+                snapshot = bm._fetch_market_snapshot(market_id)
+                expected_close = _extract_expected_close_from_snapshot(snapshot)
+                stake = float(dec.get("stake", DEFAULT_STAKE))
+                # registrar la apuesta (paper trade)
+                bet_id = f"bet-{int(datetime.now(timezone.utc).timestamp()*1000)}"
+                try:
+                    bm.place_bet(bet_id=bet_id, market_id=market_id, side="yes" if "yes" in action.lower() or action.lower()=="buy" else "no", stake=stake, expected_close=expected_close)
+                    placed.append({"bet_id": bet_id, "market_id": market_id, "side": "yes" if "yes" in action.lower() or action.lower()=="buy" else "no", "stake": stake, "expected_close": expected_close})
+                except Exception:
+                    logger.exception("Failed to place bet for market %s", market_id)
+
+        summary = summarize_decisions(decisions) or {"total": len(decisions), "actions_count": {}}
+        snapshot = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "markets_count": len(markets),
+            "signals_count": len(signals),
+            "top_signals_count": len(top_signals),
+            "decisions": _serialize_decisions(decisions),
+            "summary": summary,
+            "placed_bets": placed,
+            "success": True
+        }
+        logger.info("[BRAIN] Ciclo finalizado: total decisiones=%d, bets_placed=%d", len(decisions), len(placed))
+        return snapshot
+
+    except Exception as e:
+        logger.exception("Sandbox cycle failed")
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "success": False,
+            "error": str(e)
+        }
+
+def main():
+    # Inicializar BetManager y arrancar worker (el mismo agente verifica sus apuestas)
+    bm = BetManager()
+    bm.start_worker()
+
+    # Ejecutar un ciclo (puedes llamar esto periódicamente o desde tu scheduler)
+    result = run_cycle_and_place_bets(bm)
+    # Guardar snapshot simple en stdout para integraciones
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+
+    # Nota: no detenemos el worker aquí si el proceso sigue vivo.
+    # Si este script se usa como one-shot, detener el worker antes de salir:
+    if os.getenv("MERCURY_ONE_SHOT", "1") == "1":
+        bm.stop_worker()
 
 if __name__ == "__main__":
-    run_sandbox_cycle()
+    main()
+

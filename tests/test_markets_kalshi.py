@@ -1,5 +1,5 @@
 ﻿# tests/test_markets_kalshi.py
-from src.markets import kalshi
+from markets import kalshi
 
 def test_get_market_probability_handles_empty(monkeypatch):
     class FakeResp:
@@ -10,5 +10,6 @@ def test_get_market_probability_handles_empty(monkeypatch):
     monkeypatch.setattr("requests.request", fake_req)
     p = kalshi.get_market_probability("nonexistent")
     assert p == 0.0
+
 
 

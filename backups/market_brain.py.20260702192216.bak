@@ -1,0 +1,8 @@
+@'
+# pega aquí el contenido exacto del archivo src/core/market_brain.py mostrado en la respuesta anterior
+'@ | Out-File -Encoding utf8 src\core\market_brain.py -Force
+
+
+
+if __name__ == "__main__":
+    run_sandbox_cycle()

@@ -1,0 +1,33 @@
+@'
+# scripts/place_bet_from_agent.py
+"""
+CLI para que el agente registre una apuesta que ha decidido colocar.
+Uso:
+  python scripts/place_bet_from_agent.py --market MARKET_ID --side yes --stake 10 --close 2026-07-10T18:00:00Z
+"""
+import argparse
+import logging
+from datetime import datetime, timezone
+from src.core.bet_manager import BetManager
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("place_bet_from_agent")
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--market", required=True)
+    parser.add_argument("--side", choices=["yes","no"], required=True)
+    parser.add_argument("--stake", type=float, required=True)
+    parser.add_argument("--close", required=False, help="ISO datetime expected close (UTC)")
+    parser.add_argument("--bet-id", required=False, help="Optional bet_id; si no se pasa se genera uno")
+    args = parser.parse_args()
+
+    bm = BetManager()
+    bm.start_worker()  # asegura que el worker esté corriendo en este proceso
+    bet_id = args.bet_id or f"bet-{int(datetime.now(timezone.utc).timestamp()*1000)}"
+    bm.place_bet(bet_id=bet_id, market_id=args.market, side=args.side, stake=args.stake, expected_close=args.close)
+    print(bet_id)
+
+if __name__ == "__main__":
+    main()
+'@ | Out-File -Encoding utf8 scripts\place_bet_from_agent.py -Force

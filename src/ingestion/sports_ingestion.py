@@ -1,8 +1,8 @@
 ﻿import csv
 from typing import List, Dict, Any
 
-from src.knowledge.sports_classifier import classify_market, is_sport_market
-from src.knowledge.sports_knowledge import enrich_market_info
+from knowledge.sports_classifier import classify_market, is_sport_market
+from knowledge.sports_knowledge import enrich_market_info
 
 
 def load_sports_csv(path: str) -> List[Dict[str, Any]]:
@@ -59,4 +59,5 @@ def load_and_enrich_csv(path: str) -> List[Dict[str, Any]]:
     raw = load_sports_csv(path)
     enriched = enrich_csv_markets(raw)
     return enriched
+
 

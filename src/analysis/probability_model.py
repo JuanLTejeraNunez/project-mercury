@@ -1,8 +1,8 @@
 ﻿import math
 from typing import Dict, Any
 
-from src.knowledge.sports_classifier import classify_market
-from src.knowledge.sports_knowledge import enrich_market_info
+from knowledge.sports_classifier import classify_market
+from knowledge.sports_knowledge import enrich_market_info
 
 
 def _safe_float(v, default=0.0):
@@ -75,4 +75,5 @@ def compute_probability(market: Dict[str, Any]) -> float:
 
     # Normalización final
     return _normalize(base, 0.05, 0.95)
+
 

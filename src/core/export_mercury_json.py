@@ -1,6 +1,6 @@
 ﻿import json
 import os
-from src.agents.analysis_agent import evaluate_and_place_bet
+from agents.analysis_agent import evaluate_and_place_bet
 
 # Ejecutar Mercury
 result = evaluate_and_place_bet(
@@ -21,4 +21,5 @@ with open('outputs/mercury_output.json', 'w', encoding='utf-8') as f:
     json.dump(result, f, indent=4)
 
 print("JSON exported to outputs/mercury_output.json")
+
 

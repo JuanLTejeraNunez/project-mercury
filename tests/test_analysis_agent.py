@@ -1,5 +1,5 @@
-﻿from src.agents.analysis_agent import MercuryAnalysisAgent
-from src.utils.metrics import brier_score, accuracy
+﻿from agents.analysis_agent import MercuryAnalysisAgent
+from utils.metrics import brier_score, accuracy
 
 def test_bayes_update_basic():
     agent = MercuryAnalysisAgent()
@@ -18,5 +18,6 @@ def test_brier_score_and_accuracy():
     acc = accuracy(preds, outcomes)
     assert 0.0 <= score <= 1.0
     assert 0.0 <= acc <= 1.0
+
 
 

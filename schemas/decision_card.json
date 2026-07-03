@@ -1,0 +1,23 @@
+﻿{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DecisionCard",
+  "type": "object",
+  "required": ["decision_id","platform","market_id","market_url","side","stake_proposed","stake_max","expected_roi","time_horizon","rationale","key_signals","reinvest_if_win_pct","submitted_at"],
+  "properties": {
+    "decision_id": {"type":"string"},
+    "platform": {"type":"string"},
+    "market_id": {"type":"string"},
+    "market_url": {"type":"string","format":"uri"},
+    "side": {"type":"string","enum":["yes","no"]},
+    "stake_proposed": {"type":"number","minimum":0},
+    "stake_max": {"type":"number","minimum":0},
+    "expected_roi": {"type":"number"},
+    "time_horizon": {"type":"string"},
+    "rationale": {"type":"string"},
+    "key_signals": {"type":"object"},
+    "reinvest_if_win_pct": {"type":"number","minimum":0,"maximum":1},
+    "withdraw_if_cap_reaches": {"type":["number","null"]},
+    "submitted_at": {"type":"string","format":"date-time"}
+  },
+  "additionalProperties": true
+}

@@ -1,4 +1,4 @@
-﻿from src.agents.simulation_engine import MercurySimulationEngine
+﻿# REMOVED: import MercurySimulationEngine (simulation removed)
 
 def test_simulate_binary_events():
     engine = MercurySimulationEngine()

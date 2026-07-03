@@ -75,7 +75,7 @@ def enrich_market_info(title: str, ticker: str = "") -> dict:
     """
     text = f"{title} {ticker}".lower()
 
-    from src.knowledge.sports_classifier import classify_market
+    from knowledge.sports_classifier import classify_market
 
     sport = classify_market(title, ticker)
     league = detect_league(text)
@@ -86,4 +86,5 @@ def enrich_market_info(title: str, ticker: str = "") -> dict:
         'league': league,
         'team': team
     }
+
 

@@ -1,5 +1,5 @@
 ﻿import json
-from src.agents.analysis_agent import evaluate_and_place_bet
+from agents.analysis_agent import evaluate_and_place_bet
 
 if __name__ == '__main__':
     result = evaluate_and_place_bet(
@@ -13,4 +13,5 @@ if __name__ == '__main__':
     )
 
     print(json.dumps(result, indent=4))
+
 

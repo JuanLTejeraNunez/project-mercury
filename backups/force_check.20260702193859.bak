@@ -1,0 +1,10 @@
+﻿# scripts/force_check.ps1
+# Runs a one-shot Python script that calls BetManager._check_due_bets_once()
+$env:PYTHONPATH = (Resolve-Path src).Path
+& ".\.venv\Scripts\Activate.ps1"
+python - <<PY
+from core.bet_manager import BetManager
+bm = BetManager()
+bm._check_due_bets_once()
+print("Forced check executed")
+PY

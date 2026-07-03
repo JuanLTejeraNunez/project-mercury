@@ -1,0 +1,3 @@
+﻿market_id,platform,market_name,market_url,price,liquidity,close_time
+pm-12345,polymarket,"Will X happen by 2026-07-10","https://polymarket/example/pm-12345",0.45,1200,2026-07-10T18:00:00Z
+ks-54321,kalshi,"Will Y occur by 2026-07-08","https://kalshi/example/ks-54321",0.30,600,2026-07-08T12:00:00Z

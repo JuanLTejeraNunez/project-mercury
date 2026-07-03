@@ -1,5 +1,5 @@
 ﻿import csv
-from src.markets.market import Market
+from markets.market import Market
 
 def load_markets_from_csv(csv_path):
     markets = []
@@ -18,5 +18,6 @@ def load_markets_from_csv(csv_path):
                 )
             )
     return markets
+
 
 

@@ -1,0 +1,96 @@
+﻿# src/control/api.py
+"""
+Control API para BetManager con autenticación por token.
+Requiere la variable de entorno CONTROL_API_TOKEN con el token esperado.
+"""
+from fastapi import FastAPI, HTTPException, Header, Depends, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel
+import threading
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from core.bet_manager import BetManager
+
+app = FastAPI(title="Mercury BetManager Control API", version="0.2")
+
+# Simple token auth using Authorization: Bearer <TOKEN>
+security = HTTPBearer(auto_error=False)
+
+def require_token(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    token_env = (Path.cwd() / ".env").exists() and None  # placeholder to avoid lint; real token from env
+    expected = None
+    try:
+        import os
+        expected = os.getenv("CONTROL_API_TOKEN")
+    except Exception:
+        expected = None
+    if expected is None or creds is None or creds.scheme.lower() != "bearer" or creds.credentials != expected:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return True
+
+# Singleton BetManager for this process
+_bm_lock = threading.Lock()
+_bm: Optional[BetManager] = None
+
+def get_bm() -> BetManager:
+    global _bm
+    with _bm_lock:
+        if _bm is None:
+            _bm = BetManager()
+        return _bm
+
+class ForceCheckResponse(BaseModel):
+    open_bets_count: int
+    message: str
+
+@app.get("/bets", dependencies=[Depends(require_token)])
+def list_bets():
+    bm = get_bm()
+    try:
+        return bm.list_open_bets()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/status", dependencies=[Depends(require_token)])
+def status():
+    bm = get_bm()
+    running = False
+    try:
+        wt = getattr(bm, "_worker_thread", None)
+        if wt is not None and wt.is_alive():
+            running = True
+    except Exception:
+        running = False
+    return {"worker_running": running}
+
+@app.post("/force_check", dependencies=[Depends(require_token)], response_model=ForceCheckResponse)
+def force_check():
+    bm = get_bm()
+    try:
+        open_before = len(bm.list_open_bets())
+        bm._check_due_bets_once()
+        return {"open_bets_count": open_before, "message": "Forced check executed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/stop", dependencies=[Depends(require_token)])
+def stop_worker():
+    try:
+        Path("data").mkdir(parents=True, exist_ok=True)
+        Path("data/stop_worker").write_text("stop")
+        return {"message": "Stop flag created (data/stop_worker). Worker will stop on next iteration."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/start", dependencies=[Depends(require_token)])
+def start_worker():
+    bm = get_bm()
+    try:
+        wt = getattr(bm, "_worker_thread", None)
+        if wt is not None and wt.is_alive():
+            return {"message": "Worker already running"}
+        bm.start_worker()
+        return {"message": "Worker started"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

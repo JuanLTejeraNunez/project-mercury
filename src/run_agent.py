@@ -1,7 +1,7 @@
 ﻿import time
 from datetime import datetime, timedelta
 
-from src.agents.analysis_agent import MercuryAnalysisAgent
+from agents.analysis_agent import MercuryAnalysisAgent
 
 
 def run_agent(duration_hours=24, initial_bankroll=100.0, reinvest_rate=0.40):
@@ -75,5 +75,6 @@ if __name__ == "__main__":
     print("\nHistorial completo:")
     for h in history:
         print(h)
+
 
 

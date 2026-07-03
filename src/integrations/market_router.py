@@ -1,7 +1,7 @@
 ﻿# src/integrations/market_router.py
 import os
 from typing import Any, Dict, Optional
-from src.markets import kalshi, polymarket_public
+from markets import kalshi, polymarket_public
 
 DRY_RUN = os.getenv("DRY_RUN", "true").lower() in ("1", "true", "yes")
 
@@ -21,5 +21,6 @@ def place_bet_for(source: str, **kwargs) -> Dict[str, Any]:
     if source == "kalshi":
         return kalshi.place_order(kwargs["ticker"], kwargs["side"], kwargs["count"], kwargs["price"], kwargs["client_order_id"])
     raise ValueError(f"Place bet not implemented for source: {source}")
+
 
 

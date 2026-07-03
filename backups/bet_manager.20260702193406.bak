@@ -1,0 +1,61 @@
+def _determine_result(self, bet_row: Dict[str, Any], market_snapshot: Dict[str, Any]) -> Optional[str]:
+    """
+    Determina 'won'|'lost' o None a partir del snapshot normalizado.
+    Revisa varios campos comunes usados por distintos normalizadores.
+    """
+    if not market_snapshot:
+        return None
+
+    # 1) Campos explícitos de resolución
+    # ejemplos: resolved=True, winner='yes'/'no', outcome='yes'/'no', result='yes'/'no'
+    if market_snapshot.get("resolved") is True:
+        winner = market_snapshot.get("winner") or market_snapshot.get("outcome") or market_snapshot.get("result")
+        if isinstance(winner, bool):
+            # si winner es booleano, interpretamos True -> yes
+            winner = "yes" if winner else "no"
+        if isinstance(winner, str):
+            w = winner.lower()
+            if w in ("yes","y","true","1"):
+                return "won" if bet_row["side"] == "yes" else "lost"
+            if w in ("no","n","false","0"):
+                return "won" if bet_row["side"] == "no" else "lost"
+
+    # 2) Campos de settlement/settled/final_price
+    if market_snapshot.get("settled") is True or market_snapshot.get("is_settled") is True:
+        # intentar inferir ganador por probability o winner
+        winner = market_snapshot.get("winner") or market_snapshot.get("outcome") or market_snapshot.get("result")
+        if isinstance(winner, str):
+            w = winner.lower()
+            if w in ("yes","y","true","1"):
+                return "won" if bet_row["side"] == "yes" else "lost"
+            if w in ("no","n","false","0"):
+                return "won" if bet_row["side"] == "no" else "lost"
+
+    # 3) Probabilidades finales (fallback)
+    try:
+        py = float(market_snapshot.get("probability_yes", market_snapshot.get("prob_yes", 0.0) or 0.0))
+    except Exception:
+        py = 0.0
+    try:
+        pn = float(market_snapshot.get("probability_no", market_snapshot.get("prob_no", 0.0) or 0.0))
+    except Exception:
+        pn = 0.0
+
+    # Umbrales estrictos: 0.999/0.001
+    if py >= 0.999:
+        return "won" if bet_row["side"] == "yes" else "lost"
+    if pn >= 0.999:
+        return "won" if bet_row["side"] == "no" else "lost"
+
+    # 4) Campo textual final (final_result, resolution)
+    final = market_snapshot.get("final_result") or market_snapshot.get("resolution") or market_snapshot.get("final_outcome")
+    if isinstance(final, str):
+        f = final.lower()
+        if f in ("yes","y","true","1"):
+            return "won" if bet_row["side"] == "yes" else "lost"
+        if f in ("no","n","false","0"):
+            return "won" if bet_row["side"] == "no" else "lost"
+
+    # No concluyente
+    return None
+
