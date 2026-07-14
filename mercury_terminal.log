@@ -1,0 +1,155 @@
+﻿=====================================================================
+[2026-07-14 09:50:51]  [MANDO CENTRAL] Cortana v1.6 — Inteligencia Auto-Reparable
+[2026-07-14 09:50:51]  Estatus: Monitoreo de logs y diagnóstico activo.
+=====================================================================
+[2026-07-14 09:51:27] 
+[!] Directiva detectada de John: "Crea un script de prueba en Python para verificar la conexiÃ³n llamado test_connection.py..."
+[2026-07-14 09:51:27]  -> Intentando Canal Principal...
+[2026-07-14 09:55:11] [ALERTA] Fallo detectado. Activando protocolo de Auto-Debugging...
+node.exe : Warning: 256-color support not detected. Using a terminal with at least 256-color support is recommended for a better visual experience.
+At C:\nvm4w\nodejs\gemini.ps1:16 char:5
++     & "$basedir/node$exe"  "$basedir/node_modules/@google/gemini-cli/ ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: 256-co...ual experience.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Ripgrep is not available. Falling back to GrepTool.
+Attempt 1 failed with status 503. Retrying with backoff... _ApiError: {"error":{"message":"{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This 
+model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  
+}\n}\n","code":503,"status":"Service Unavailable"}}
+    at throwErrorIfNotOK (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258424:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258187:7
+    at async Models.generateContentStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:259283:16)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:301279:19
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:278341:23
+    at async retryWithBackoff (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:298287:23)
+    at async GeminiChat.makeApiCallAndProcessStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321564:28)
+    at async GeminiChat.streamWithRetries 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321382:29)
+    at async Turn.run (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:322128:24) {
+  status: 503
+}
+Attempt 2 failed with status 503. Retrying with backoff... _ApiError: {"error":{"message":"{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This 
+model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  
+}\n}\n","code":503,"status":"Service Unavailable"}}
+    at throwErrorIfNotOK (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258424:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258187:7
+    at async Models.generateContentStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:259283:16)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:301279:19
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:278341:23
+    at async retryWithBackoff (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:298287:23)
+    at async GeminiChat.makeApiCallAndProcessStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321564:28)
+    at async GeminiChat.streamWithRetries 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321382:29)
+    at async Turn.run (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:322128:24) {
+  status: 503
+}
+Attempt 3 failed with status 503. Retrying with backoff... _ApiError: {"error":{"message":"{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This 
+model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  
+}\n}\n","code":503,"status":"Service Unavailable"}}
+    at throwErrorIfNotOK (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258424:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258187:7
+    at async Models.generateContentStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:259283:16)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:301279:19
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:278341:23
+    at async retryWithBackoff (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:298287:23)
+    at async GeminiChat.makeApiCallAndProcessStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321564:28)
+    at async GeminiChat.streamWithRetries 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321382:29)
+    at async Turn.run (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:322128:24) {
+  status: 503
+}
+Attempt 4 failed with status 503. Retrying with backoff... _ApiError: {"error":{"message":"{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This 
+model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  
+}\n}\n","code":503,"status":"Service Unavailable"}}
+    at throwErrorIfNotOK (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258424:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258187:7
+    at async Models.generateContentStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:259283:16)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:301279:19
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:278341:23
+    at async retryWithBackoff (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:298287:23)
+    at async GeminiChat.makeApiCallAndProcessStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321564:28)
+    at async GeminiChat.streamWithRetries 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321382:29)
+    at async Turn.run (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:322128:24) {
+  status: 503
+}
+Attempt 5 failed. Retrying with backoff... Error: exception TypeError: fetch failed sending request
+    at file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258262:13
+    at async Models.generateContentStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:259283:16)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:301279:19
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:278341:23
+    at async retryWithBackoff (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:298287:23)
+    at async GeminiChat.makeApiCallAndProcessStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321564:28)
+    at async GeminiChat.streamWithRetries 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321382:29)
+    at async Turn.run (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:322128:24)
+    at async GeminiClient.processTurn 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:335620:22)
+    at async GeminiClient.sendMessageStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:335717:14)
+Attempt 6 failed with status 503. Retrying with backoff... _ApiError: {"error":{"message":"{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This 
+model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  
+}\n}\n","code":503,"status":"Service Unavailable"}}
+    at throwErrorIfNotOK (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258424:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:258187:7
+    at async Models.generateContentStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:259283:16)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:301279:19
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:278341:23
+    at async retryWithBackoff (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:298287:23)
+    at async GeminiChat.makeApiCallAndProcessStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321564:28)
+    at async GeminiChat.streamWithRetries 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321382:29)
+    at async Turn.run (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:322128:24) {
+  status: 503
+}
+Error when talking to Gemini API Full report available at: 
+C:\Users\jltej\AppData\Local\Temp\gemini-client-error-Turn.run-sendMessageStream-2026-07-14T13-55-11-753Z.json TerminalQuotaError: You have exhausted your 
+daily quota on this model.
+    at classifyGoogleError (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:297614:16)
+    at retryWithBackoff (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:298310:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async GeminiChat.makeApiCallAndProcessStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321564:28)
+    at async GeminiChat.streamWithRetries 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:321382:29)
+    at async Turn.run (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:322128:24)
+    at async GeminiClient.processTurn 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:335620:22)
+    at async GeminiClient.sendMessageStream 
+(file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/chunk-W4YMYD53.js:335717:14)
+    at async file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/gemini-APOZRZEF.js:23725:26
+    at async main (file:///C:/Users/jltej/AppData/Local/nvm/v24.18.0/node_modules/@google/gemini-cli/bundle/gemini-APOZRZEF.js:29133:5) {
+  cause: {
+    code: 429,
+    message: 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: 
+https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n' +
+      '* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.5-flash\n' +
+      'Please retry in 48.450220375s.',
+    details: [ [Object], [Object], [Object] ]
+  },
+  retryDelayMs: undefined,
+  reason: undefined
+}
+An unexpected critical error occurred:[object Object]
+[2026-07-14 09:55:11]  -> Enviando registros a Gemini para diagnóstico...
+[2026-07-14 09:58:02] [OK] Reporte de error enviado a tu Google Drive (reporte.txt).
+[2026-07-14 09:58:02]  -> Ejecutando reintento por canal de escape...
+[2026-07-14 09:58:06]  -> Transmitiendo cambios a GitHub...
