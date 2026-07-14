@@ -1,19 +1,1 @@
-{
-  "task": "Actualización de arquitectura: Centralización y Blindaje",
-  "files": [
-    {
-      "name": ".gitignore",
-      "content": ".env\n__pycache__/\n*.pyc\n*.log"
-    },
-    {
-      "name": "api_directory.py",
-      "content": "class ApiDirectory:\n    # Directorio Maestro: Se actualiza aquí, se propaga en todas las llamadas.\n    ENDPOINTS = {\n        'KALSHI': 'https://external-api.kalshi.com/trade-api/v2',\n        'SUPABASE': 'https://nvfufmgkbgcigbftzbne.supabase.co',\n        'GROQ': 'https://api.groq.com/openai/v1',\n        'RENDER': 'https://api.render.com/v1'\n    }\n\n    @classmethod\n    def update_or_add(cls, service, url):\n        cls.ENDPOINTS[service.upper()] = url\n"
-    },
-    {
-      "name": "api_client.py",
-      "content": "import os, requests\nfrom dotenv import load_dotenv\nfrom api_directory import ApiDirectory\n\nload_dotenv()\n\nclass AetraClient:\n    def __init__(self):\n        self.dir = ApiDirectory()\n\n    def request(self, service, path, method='GET', payload=None):\n        url = f'{self.dir.get_url(service)}{path}'\n        key = os.getenv(f'{service.upper()}_API_KEY')\n        if not key: raise Exception(f'Credencial {service}_API_KEY no encontrada en .env')\n        headers = {'Authorization': f'Bearer {key}', 'Content-Type': 'application/json'}\n        return requests.request(method, url, json=payload, headers=headers)"
-    }
-  ],
-  "action": "1. Crear/Actualizar .gitignore. 2. Crear api_directory.py con lógica de actualización. 3. Crear api_client.py. 4. Asegurar que .env no se suba."
-}
 ""
